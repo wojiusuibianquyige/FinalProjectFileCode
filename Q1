@@ -1,0 +1,40 @@
+#要用的包
+library(ggplot2)
+library(plyr)
+#下载数据
+if(!(file.exists("summarySCC_PM25.rds") && file.exists("Source_Classification_Code.rds"))){
+    archiveFile <- "NEI_data.zip"
+    if(!file.exists(archiveFile)){
+        archiveURL <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+        download.file(url = archiveURL, destfile = archiveFile, method = "curl")
+    }
+    unzip(archiveFile)
+}
+#导入数据
+NEI <- readRDS("summarySCC_PM25.rds")
+SCC <- readRDS("Source_Classification_Code.rds")
+head(NEI)
+head(SCC)
+#因素
+colToFactor <- c("fips", "SCC", "Pollutant", "type", "year")
+NEI[,colToFactor] <- lapply(NEI[,colToFactor], factor)
+head(levels(NEI$fips))
+#舍去NA值
+levels(NEI$fips)[1]  = NA
+NEIdata <- NEI[complete.cases(NEI),]
+colSums(is.na(NEIdata))
+#Q1
+totalEmission <- aggregate(Emissions~year, NEIdata, sum)
+totalEmission
+barplot(
+    (totalEmission$Emissions)/10^6,
+    #整理数据
+    names.arg = totalEmission$year,
+    #y-x轴
+    xlab = "Year", ylab = "PM2.5 Emission (10^6 Tons)",
+    #y-x轴名字
+    main =  "Total PM2.5 Emissions From All US Source"
+    #题目
+)
+dev.copy(png, "plot1.png", width = 480, height = 480)
+dev.off()
